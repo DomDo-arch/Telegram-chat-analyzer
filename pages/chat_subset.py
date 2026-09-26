@@ -1,8 +1,5 @@
 import streamlit as st
 
-import tempfile
-import json
-
 try:
 	from make_table_from_chat import make_table
 	from day_stats import filter_interval_table
