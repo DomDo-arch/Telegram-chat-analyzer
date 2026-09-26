@@ -1,8 +1,5 @@
 import streamlit as st
 
-import tempfile
-import json
-
 try:
 	from src.make_table_from_chat import make_table
 	from src.words_stats import words_stats, count_user_messages, users_z_score
@@ -37,17 +34,23 @@ except ModuleNotFoundError:
 	from gini_user_table import gini
 	from users_word_table import user_word_table
 	from day_hour_stats import weekday_hour_df
-	
-import os
 
 import seaborn as sns
 import matplotlib.pyplot as plt
+
+import os
+from pathlib import Path
 
 def read_input(input_json):
 	
 	if input_json is not None:
 		
 		file_path = os.path.abspath(input_json)
+
+		root = Path.home()
+		matches = list(root.rglob(input_json))[0]
+		
+		input_json = matches
 		
 		df = make_table(input_json)
 
