@@ -42,12 +42,23 @@ except ModuleNotFoundError:
 	
 import seaborn as sns
 import matplotlib.pyplot as plt
-	
+
+import os
+from pathlib import Path
+
 def read_input(input_json):
 	
 	if input_json is not None:
+		
+		file_path = os.path.abspath(input_json)
 
+		root = Path.home()
+		matches = list(root.rglob(input_json))[0]
+		
+		input_json = matches
+		
 		df = make_table(input_json)
+
 		df["message"] = df["message"].astype(str)
 
 		return df
