@@ -49,6 +49,8 @@ def read_input(input_json):
 
 		root = Path.home()
 		matches = list(root.rglob(input_json))[0]
+
+		st.write(matches)
 		
 		input_json = matches
 		
