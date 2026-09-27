@@ -34,30 +34,63 @@ except ModuleNotFoundError:
 	from gini_user_table import gini
 	from users_word_table import user_word_table
 	from day_hour_stats import weekday_hour_df
+	
+import os
 
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-import os
 from pathlib import Path
 
-def read_input(input_json):
+import json
+
+from datetime import date
+
+from pandas import DataFrame
+
+def read_input(input_json, destination: str = None):
 	
 	if input_json is not None:
-		
-		file_path = os.path.abspath(input_json)
 
-		root = Path.home()
-		matches = list(root.rglob(input_json))[0]
-
-		st.write(matches)
+		data = json.loads(input_json.read())
 		
-		input_json = matches
+		chat = []
 		
-		df = make_table(input_json)
+		messages_dict = data["messages"]
+		
+		for i in messages_dict:
+			if i["type"] == "message":
+				dates = i["date"].split("T")[0]
+				hour = i["date"].split("T")[1]
+				if isinstance(i["text"], str):
+					message = i["text"]
+				elif isinstance(i["text"], list):
+					message = i["text"]
+				
+				date_a = dates.split("-")
+				
+				day = int(date_a[2])
+				month = int(date_a[1])
+				year = int(date_a[0])
+				
+				weekday = date(year, month, day).weekday()
+		
+			if data["type"] == "private_supergroup":
+				if i["type"] == "message":
+					user = i["from"]
 
+					chat.append([dates, weekday, hour, user, message])
+					
+			elif data["type"] == "personal_chat":
+				user = i["from"]
+				
+				chat.append([dates, weekday, hour, user, message])
+
+		df = DataFrame(chat)
+		df.rename(columns = {0:"date", 1:"weekday", 2:"hour", 3:"user", 4:"message", 5:"media_type"}, inplace=True)
+		
 		df["message"] = df["message"].astype(str)
-
+	
 		return df
 	
 def Message_entire(input_json):
@@ -157,3 +190,34 @@ def Years_entire(input_json):
 	
 		st.header("Season stats")
 		st.bar_chart(season_count(df), x="season", y="messages")
+	
+if __name__ == "__main__":
+	
+	#input_json = "group_chat.json"
+	input_json = st.file_uploader(label="upload", type="json")
+	
+	#if input_json is not None: st.write(input_json)
+	
+	def Messages():
+		Message_entire(input_json)
+		
+	def Links():
+		Links_entire(input_json)
+		
+	def Hours():
+		Hours_entire(input_json)
+		
+	def Day():
+		Days_entire(input_json)
+		
+	def Weekday():
+		Weekdays_entire(input_json)
+		
+	def Months():
+		Months_entire(input_json)
+		
+	def Years():
+		Years_entire(input_json)
+	
+	pg = st.navigation([Messages, Links, Hours, Day, Weekday, Months, Years])
+	pg.run()
