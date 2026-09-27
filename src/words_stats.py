@@ -60,7 +60,10 @@ def users_z_score(df: DataFrame, destination:str = None) -> DataFrame:
 	
 	for i in range(len(messages)):
 		if avg != 0:
-			z_scores.append([messages_a.user[i], (messages_a.messages[i]-avg)/std])
+			if std != 0:
+				z_scores.append([messages_a.user[i], (messages_a.messages[i]-avg)/std])
+			else:
+				z_scores.append([messages_a.user[i], 0])
 		
 	df = DataFrame(z_scores)
 	df.rename(columns = {0:"user",1:"z_score"}, inplace = True)
