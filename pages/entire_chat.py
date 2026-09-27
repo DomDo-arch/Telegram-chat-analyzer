@@ -75,16 +75,16 @@ def read_input(input_json, destination: str = None):
 				
 				weekday = date(year, month, day).weekday()
 		
-			if data["type"] == "private_supergroup":
-				if i["type"] == "message":
+			if i["type"] == "message":
+				if data["type"] == "private_supergroup":
 					user = i["from"]
 
 					chat.append([dates, weekday, hour, user, message])
 					
-			elif data["type"] == "personal_chat":
-				user = i["from"]
+				elif data["type"] == "personal_chat":
+					user = i["from"]
 				
-				chat.append([dates, weekday, hour, user, message])
+					chat.append([dates, weekday, hour, user, message])
 
 		df = DataFrame(chat)
 		df.rename(columns = {0:"date", 1:"weekday", 2:"hour", 3:"user", 4:"message", 5:"media_type"}, inplace=True)
@@ -105,9 +105,12 @@ def Message_entire(input_json):
 		st.header("Chat table")
 		st.write(df)
 	
-		st.header("Words stats")
-		st.write(gini(words_stats(df).word_count))
-		st.write(words_stats(df))
+		try:
+			st.header("Words stats")
+			st.write(gini(words_stats(df).word_count))
+			st.write(words_stats(df))
+		except KeyError:
+			pass
 	
 		st.header("User messages")
 		st.write(gini(count_user_messages(df).messages))
@@ -117,10 +120,13 @@ def Message_entire(input_json):
 		st.write(positive_z_scores, positive_z_scores/users)
 		st.write(users_z_score(df))
 		
-		st.header("Users word table")
-		word = st.selectbox("Word", list(set(words_stats(df).word)))
-		if word is not None:
-			st.write(user_word_table(df, word))
+		try:
+			st.header("Users word table")
+			word = st.selectbox("Word", list(set(words_stats(df).word)))
+			if word is not None:
+				st.write(user_word_table(df, word))
+		except KeyError:
+			pass
 	
 def Links_entire(input_json):
 	
@@ -131,11 +137,14 @@ def Links_entire(input_json):
 		st.header("Links table")
 		st.write(make_links_table(df))
 		
-		st.header("Links count")
-		st.write(links_count(df))
+		try:
+			st.header("Links count")
+			st.write(links_count(df))
 		
-		st.header("Domains table")
-		st.write(domains_count(df))
+			st.header("Domains table")
+			st.write(domains_count(df))
+		except:
+			pass
 		
 def Days_entire(input_json):
 	
