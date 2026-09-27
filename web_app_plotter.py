@@ -5,10 +5,6 @@ from pages.chat_subset import Message_subset, Links_subset, Hours_subset, Days_s
 from pages.user_subset import Message_user_subset, Links_user_subset, Hours_user_subset, Days_user_subset, Weekdays_user_subset, Months_user_subset, Years_user_subset
 
 input_json = file_uploader(label="upload", type=["json"])
-#print(input_json)
-
-if input_json is not None:
-	input_json = input_json.name
 		
 options = ["Entire chat", "Chat subset", "User subset"]
 selection = segmented_control("Option page", options, selection_mode="single", default="Entire chat", required=True)
