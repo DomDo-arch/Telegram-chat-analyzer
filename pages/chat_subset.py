@@ -36,28 +36,63 @@ except ModuleNotFoundError:
 	from gini_user_table import gini
 	from users_word_table import user_word_table
 	from day_hour_stats import weekday_hour_df
+
+import os
 	
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-import os
 from pathlib import Path
+	
+import json
 
-def read_input(input_json):
+from datetime import date
+
+from pandas import DataFrame
+
+def read_input(input_json, destination: str = None):
 	
 	if input_json is not None:
-		
-		file_path = os.path.abspath(input_json)
 
-		root = Path.home()
-		matches = list(root.rglob(input_json))[0]
+		data = json.loads(input_json.read())
 		
-		input_json = matches
+		chat = []
 		
-		df = make_table(input_json)
+		messages_dict = data["messages"]
+		
+		for i in messages_dict:
+			if i["type"] == "message":
+				dates = i["date"].split("T")[0]
+				hour = i["date"].split("T")[1]
+				if isinstance(i["text"], str):
+					message = i["text"]
+				elif isinstance(i["text"], list):
+					message = i["text"]
+				
+				date_a = dates.split("-")
+				
+				day = int(date_a[2])
+				month = int(date_a[1])
+				year = int(date_a[0])
+				
+				weekday = date(year, month, day).weekday()
+		
+			if data["type"] == "private_supergroup":
+				if i["type"] == "message":
+					user = i["from"]
 
+					chat.append([dates, weekday, hour, user, message])
+					
+			elif data["type"] == "personal_chat":
+				user = i["from"]
+				
+				chat.append([dates, weekday, hour, user, message])
+
+		df = DataFrame(chat)
+		df.rename(columns = {0:"date", 1:"weekday", 2:"hour", 3:"user", 4:"message", 5:"media_type"}, inplace=True)
+		
 		df["message"] = df["message"].astype(str)
-
+	
 		return df
 	
 def return_days_interval():
@@ -222,3 +257,34 @@ def Years_subset(input_json):
 		st.header("Season stats")
 		st.write(gini(season_count(df).messages))
 		st.bar_chart(season_count(df), x="season", y="messages")
+	
+if __name__ == "__main__":
+	
+	#input_json = "group_chat.json"
+	input_json = st.file_uploader(label="upload", type=["json"])
+	if input_json is not None:
+		input_json = input_json.name
+	
+	def Message():
+		Message_subset(input_json)
+		
+	def Links():
+		Links_subset(input_json)
+		
+	def Days():
+		Days_subset(input_json)
+		
+	def Hours():
+		Hours_subset(input_json)
+		
+	def Weekday():
+		Weekdays_subset(input_json)
+		
+	def Months():
+		Months_subset(input_json)
+		
+	def Years():
+		Years_subset(input_json)
+	
+	pg = st.navigation([Message, Links, Days, Hours, Weekday, Months, Years])
+	pg.run()
