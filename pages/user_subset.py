@@ -77,16 +77,16 @@ def read_input(input_json, destination: str = None):
 				
 				weekday = date(year, month, day).weekday()
 		
-			if data["type"] == "private_supergroup":
-				if i["type"] == "message":
+			if i["type"] == "message":
+				if data["type"] == "private_supergroup":
 					user = i["from"]
 
 					chat.append([dates, weekday, hour, user, message])
 					
-			elif data["type"] == "personal_chat":
-				user = i["from"]
+				elif data["type"] == "personal_chat":
+					user = i["from"]
 				
-				chat.append([dates, weekday, hour, user, message])
+					chat.append([dates, weekday, hour, user, message])
 
 		df = DataFrame(chat)
 		df.rename(columns = {0:"date", 1:"weekday", 2:"hour", 3:"user", 4:"message", 5:"media_type"}, inplace=True)
@@ -134,9 +134,12 @@ def Message_user_subset(input_json):
 		st.header("Chat table")
 		st.write(df)
 	
-		st.header("Words stats")
-		st.write(gini(words_stats(df).word_count))
-		st.write(words_stats(df))
+		try:
+			st.header("Words stats")
+			st.write(gini(words_stats(df).word_count))
+			st.write(words_stats(df))
+		except KeyError:
+			pass
 	
 		st.header("User messages")
 		st.write(count_user_messages(df))
