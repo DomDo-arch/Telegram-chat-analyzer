@@ -10,7 +10,9 @@ Export tables from a single chat or multiple files.
 pip install -r requirements.txt
 
 # Usage
+```python
 streamlit run web_app_plotter.py
+```
 
 Suppress new browser window opening when launching the script:
 ```python
