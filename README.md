@@ -13,9 +13,9 @@ pip install -r requirements.txt
 streamlit run web_app_plotter.py
 
 Suppress new browser window opening when launching the script:
-
+```python
 streamlit run web_app_plotter.py --server.headless true
-
+```
 # Contact
 Feel free to contact for any questions or suggestions or inquires to the following email
 Contact email: gengenkaigen at gmail dot com.
