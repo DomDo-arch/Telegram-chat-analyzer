@@ -4,7 +4,7 @@ Interactively view or produce exportable tables about messages, users from expor
 # Project description
 Produce tables, bar charts, heatmaps about the messages in the entire chat, a chat subset or a targeted user.
 Get stats about words, user messages count, first message count by each user, links, hour and more.
-Export tables from a single chat or multiple files.
+Export tables from a personal chat or a private super group.
 
 # Requirements
 pip install -r requirements.txt
