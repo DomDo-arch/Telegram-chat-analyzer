@@ -308,9 +308,9 @@ def Days_entire(input_json):
 			df1 = find_max_weekday_hour_dir(df)
 			st.write(df1)
 			
-			st.header("Day hour percentage min")
-			df2 = find_min_weekday_hour_dir(df)
-			st.write(df2)
+			#st.header("Day hour percentage min")
+			#df2 = find_min_weekday_hour_dir(df)
+			#st.write(df2)
 			
 			df = df.drop(columns=["title"])
 			
@@ -359,9 +359,9 @@ def Weekdays_entire(input_json):
 			df1 = find_max_week_dir(df)
 			st.write(df1)
 			
-			st.header("Weekday percentage min")
-			df2 = find_min_week_dir(df)
-			st.write(df2)
+			#st.header("Weekday percentage min")
+			#df2 = find_min_week_dir(df)
+			#st.write(df2)
 			
 			df = df.drop(columns=["title"])
 	
