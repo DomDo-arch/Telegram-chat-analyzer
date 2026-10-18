@@ -160,6 +160,7 @@ def Message_entire(input_json: list) -> None:
 			
 			chat_gini = DataFrame(chat_gini)
 			chat_gini.rename(columns = {0:"chat", 1:"gini"}, inplace=True)
+			chat_gini = chat_gini.sort_values("chat")
 			
 			st.header("Chat messages gini")
 			st.write(chat_gini)
