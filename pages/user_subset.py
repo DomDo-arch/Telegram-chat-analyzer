@@ -1,5 +1,3 @@
-import streamlit as st
-
 try:
 	from make_table_from_chat import make_table
 	from words_stats import words_stats, count_user_messages, users_z_score
@@ -36,6 +34,8 @@ except ModuleNotFoundError:
 	from day_stats import filter_interval_table
 	from gini_user_table import gini
 	from day_hour_stats import weekday_hour_df
+	
+import streamlit as st	
 	
 import os
 
@@ -78,14 +78,7 @@ def read_input(input_json, destination: str = None):
 				weekday = date(year, month, day).weekday()
 		
 			if i["type"] == "message":
-				if data["type"] == "private_supergroup":
 					user = i["from"]
-
-					chat.append([dates, weekday, hour, user, message])
-					
-				elif data["type"] == "personal_chat":
-					user = i["from"]
-				
 					chat.append([dates, weekday, hour, user, message])
 
 		df = DataFrame(chat)
@@ -119,11 +112,13 @@ def return_days_interval():
 	
 def Message_user_subset(input_json):
 	
-	df = read_input(input_json)
+	try:
+		df = read_input(input_json[0])
+	except IndexError:
+		df = None
 	
-	days_interval = return_days_interval()
-
 	if df is not None:
+		days_interval = return_days_interval()
 		
 		option_user = st.selectbox("User", list(set(df.user)))
 		
@@ -146,11 +141,13 @@ def Message_user_subset(input_json):
 	
 def Links_user_subset(input_json):
 	
-	df = read_input(input_json)
-	
-	days_interval = return_days_interval()
-	
+	try:
+		df = read_input(input_json[0])
+	except IndexError:
+		df = None
+
 	if df is not None:
+		days_interval = return_days_interval()
 		
 		option_user = st.selectbox("User", list(set(df.user)))
 		
@@ -177,11 +174,13 @@ def Links_user_subset(input_json):
 	
 def Hours_user_subset(input_json):
 	
-	df = read_input(input_json)
-	
-	days_interval = return_days_interval()
+	try:
+		df = read_input(input_json[0])
+	except IndexError:
+		df = None
 	
 	if df is not None:
+		days_interval = return_days_interval()
 		
 		option_user = st.selectbox("User", list(set(df.user)))
 		
@@ -195,13 +194,16 @@ def Hours_user_subset(input_json):
 		
 def Days_user_subset(input_json):
 	
-	df = read_input(input_json)
-	
-	days_interval = return_days_interval()
+	try:
+		df = read_input(input_json[0])
+	except IndexError:
+		df = None
 	
 	title_label = "mon tue wed thu fri sat sun".split()
 	
 	if df is not None:
+		
+		days_interval = return_days_interval()
 		
 		option_user = st.selectbox("User", list(set(df.user)))
 		
@@ -221,11 +223,13 @@ def Days_user_subset(input_json):
 	
 def Weekdays_user_subset(input_json):
 	
-	df = read_input(input_json)
-	
-	days_interval = return_days_interval()
+	try:
+		df = read_input(input_json[0])
+	except IndexError:
+		df = None
 	
 	if df is not None:
+		days_interval = return_days_interval()
 		
 		option_user = st.selectbox("User", list(set(df.user)))
 		
@@ -239,11 +243,13 @@ def Weekdays_user_subset(input_json):
 	
 def Months_user_subset(input_json):
 	
-	df = read_input(input_json)
-	
-	days_interval = return_days_interval()
+	try:
+		df = read_input(input_json[0])
+	except IndexError:
+		df = None
 	
 	if df is not None:
+		days_interval = return_days_interval()
 		
 		option_user = st.selectbox("User", list(set(df.user)))
 		
@@ -256,7 +262,10 @@ def Months_user_subset(input_json):
 	
 def Years_user_subset(input_json):
 	
-	df = read_input(input_json)
+	try:
+		df = read_input(input_json[0])
+	except IndexError:
+		df = None
 	
 	if df is not None:
 		
