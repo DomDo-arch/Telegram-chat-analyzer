@@ -1,10 +1,10 @@
-from streamlit import file_uploader, segmented_control, navigation, write, checkbox
+from streamlit import file_uploader, segmented_control, navigation, write, checkbox, context
 
 from pages.entire_chat import Message_entire, Links_entire, Hours_entire, Days_entire, Weekdays_entire, Months_entire, Years_entire
 from pages.chat_subset import Message_subset, Links_subset, Hours_subset, Days_subset, Weekdays_subset, Months_subset, Years_subset
 from pages.user_subset import Message_user_subset, Links_user_subset, Hours_user_subset, Days_user_subset, Weekdays_user_subset, Months_user_subset, Years_user_subset
 
-input_json = file_uploader(label="File", type=["json"])
+input_json = file_uploader(label="Files", type=["json"], accept_multiple_files=True)
 		
 options = ["Entire chat", "Chat subset", "User subset"]
 selection = segmented_control("Option page", options, selection_mode="single", default="Entire chat", required=True)
@@ -21,7 +21,7 @@ def Hours():
 def Days():
 	Days_entire(input_json)
 		
-def Weekday():
+def Weekdays():
 	Weekdays_entire(input_json)
 		
 def Months():
@@ -31,7 +31,9 @@ def Years():
 	Years_entire(input_json)
 	
 if selection == "Entire chat":
-	pg = navigation([Messages, Links, Days, Hours, Weekday, Months, Years])
+	
+	#write(context["timezone"], context.headers)
+	pg = navigation([Messages, Links, Hours, Days, Weekdays, Months, Years])
 	pg.run()
 	
 def Messages():
