@@ -1,4 +1,4 @@
-# Telegram-chat-analyzer
+# Telegram chat analyzer
 Interactively view or produce exportable tables about messages, users from exported Telegram chats. Locally.
 
 # Project description
