@@ -1,15 +1,15 @@
 try:
 	from src.make_table_from_chat import make_table
 	from src.words_stats import words_stats, count_user_messages, users_z_score, total_messages_dir
-	from src.weekday_stats import weekday_count, weekday_folder, weekday_percentage_folder
+	from src.weekday_stats import weekday_count, weekday_folder, weekday_percentage_folder, find_max_week_dir, find_min_week_dir
 	from src.make_links_table import make_links_table, links_count, domains_count, links_month_dir, domains_count_dir, group_chats_domains_dir
 	from src.hour_stats import hour_count, hour_dir
-	from src.month_stats import month_count, month_dir, month_percentage_folder
+	from src.month_stats import month_count, month_dir, month_percentage_folder, find_max_month_dir, find_min_month_dir
 	from src.year_stats import year_count, year_dir
 	from src.season_stats import season_count, season_dir, season_percentage_folder
 	from src.gini_user_table import gini
 	from src.users_word_table import user_word_table
-	from src.day_hour_stats import weekday_hour_df, day_hour_dir, hour_percentage_dir, weekday_hour_percentage
+	from src.day_hour_stats import weekday_hour_df, day_hour_dir, hour_percentage_dir, weekday_hour_percentage, find_max_weekday_hour, find_max_weekday_hour_dir, find_min_weekday_hour_dir
 	from src.first_messages import days_sending_messages
 
 except ModuleNotFoundError:
@@ -27,7 +27,7 @@ except ModuleNotFoundError:
 	from weekday_stats import weekday_count, weekday_folder, weekday_percentage_folder
 	from make_links_table import make_links_table, links_count, domains_count, links_month_dir, domains_count_dir, group_chats_domains_dir
 	from hour_stats import hour_count, hour_dir
-	from month_stats import month_count, month_dir, month_percentage_folder
+	from month_stats import month_count, month_dir, month_percentage_folder, find_max_month_dir, find_min_month_dir
 	from year_stats import year_count, year_dir
 	from season_stats import season_count, season_dir, season_percentage_folder
 	from gini_user_table import gini
@@ -127,7 +127,7 @@ def Message_entire(input_json: list) -> None:
 			
 			df_users_z_score = users_z_score(df)
 			df_users_z_score = df_users_z_score.reset_index(drop=True)
-	
+
 			st.header("Messages z-score")
 			st.write(positive_z_scores, positive_z_scores/users)
 			st.write(df_users_z_score)
@@ -151,8 +151,8 @@ def Message_entire(input_json: list) -> None:
 			df = df.reset_index(drop=True)
 			
 			st.header("Chat messages")
-			st.write(df)	
-
+			st.write(df)
+			
 			chat_gini = []
 			
 			for i in range(len(dfs)):
@@ -163,7 +163,7 @@ def Message_entire(input_json: list) -> None:
 			chat_gini = chat_gini.sort_values("chat")
 			
 			st.header("Chat messages gini")
-			st.write(chat_gini)
+			st.write(chat_gini)	
 	
 def Links_entire(input_json) -> None:
 	
@@ -302,8 +302,15 @@ def Days_entire(input_json):
 			df = hour_percentage_dir(dfs, title_list=titles)
 			df = df.sort_values("title")
 			df = df.reset_index(drop=True)
-			
 			st.write(df)
+			
+			st.header("Day hour percentage max")
+			df1 = find_max_weekday_hour_dir(df)
+			st.write(df1)
+			
+			st.header("Day hour percentage min")
+			df2 = find_min_weekday_hour_dir(df)
+			st.write(df2)
 			
 			df = df.drop(columns=["title"])
 			
@@ -347,6 +354,15 @@ def Weekdays_entire(input_json):
 			
 			df = weekday_percentage_folder(dfs, titles)
 			df = df.sort_values("title")
+			
+			st.header("Weekday percentage max")
+			df1 = find_max_week_dir(df)
+			st.write(df1)
+			
+			st.header("Weekday percentage min")
+			df2 = find_min_week_dir(df)
+			st.write(df2)
+			
 			df = df.drop(columns=["title"])
 	
 			st.header("Weekday percentage heatmap")
@@ -385,6 +401,14 @@ def Months_entire(input_json):
 			df = df.sort_values("title")
 			df = df.reset_index(drop=True)
 			st.write(df)
+			
+			st.header("Month messages percentage max")
+			df1 = find_max_month_dir(df)
+			st.write(df1)
+			
+			st.header("Month messages percentage min")
+			df2 = find_min_month_dir(df)
+			st.write(df2)
 			
 			df = df.drop(columns=["title"])
 			
