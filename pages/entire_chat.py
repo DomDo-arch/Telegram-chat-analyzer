@@ -111,18 +111,26 @@ def Message_entire(input_json: list) -> None:
 	
 			try:
 				st.header("Words stats")
-				st.write(gini(words_stats(df).word_count))
-				st.write(words_stats(df))
+				df_words_stats = words_stats(df)
+				df_words_stats = df_words_stats.reset_index(drop=True)
+				st.write(gini(df_words_stats.word_count))
+				st.write(df_words_stats)
 			except KeyError:
 				pass
 	
 			st.header("User messages")
-			st.write(gini(count_user_messages(df).messages))
-			st.write(count_user_messages(df))
+			
+			df_count_user_messages = count_user_messages(df)
+			df_count_user_messages = df_count_user_messages.reset_index(drop=True)
+			st.write(gini(df_count_user_messages.messages))
+			st.write(df_count_user_messages)
+			
+			df_users_z_score = users_z_score(df)
+			df_users_z_score = df_users_z_score.reset_index(drop=True)
 	
 			st.header("Messages z-score")
 			st.write(positive_z_scores, positive_z_scores/users)
-			st.write(users_z_score(df))
+			st.write(df_users_z_score)
 		
 			try:
 				st.header("Users word table")
