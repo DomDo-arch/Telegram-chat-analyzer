@@ -1,5 +1,5 @@
 from make_table_from_chat import make_table
-from pandas import DataFrame
+from pandas import DataFrame, concat
 from collections import Counter
 
 def weekday_count(df: DataFrame, destination: str = None) -> DataFrame:
@@ -52,13 +52,91 @@ def weekday_hour_df(df: DataFrame) -> DataFrame:
 	df.sort_index(axis=1, inplace=True)
 	
 	return df
+
+def hour(df: DataFrame) -> dict[int:int]:
 	
+	hours = []
+	
+	for i in df.hour:
+		hour = int(i.split(":")[0])
+		hours.append(hour)
+	
+	hours = Counter(hours)
+	
+	hour_num = {k: v for k, v in sorted(hours.items(), key=lambda item: item[0])}
+	
+	return hour_num
+
+def day_hour_dir(folder: list[DataFrame], destination: str = None, title_list = None) -> DataFrame:
+	
+	hour_list = []
+	
+	for i in range(len(folder)):
+		hour_dicts = hour(folder[i])
+		hour_dicts["title"] = title_list[i]
+		
+		hour_list.append(hour_dicts)
+		
+	df = DataFrame(hour_list)
+	
+	cols = df.columns.tolist()
+	
+	cols.remove("title")
+	cols = sorted(cols)
+	cols.append("title")
+	cols = cols[-1:] + cols[:-1]
+	
+	df = df[cols]
+	
+	return df
+
+def hour_percentage(df:	DataFrame, title: list[str]) -> DataFrame:
+	
+	df = day_hour_dir([df], title_list = title)
+	df = df.set_index("title")
+	
+	res = df.div(df.sum(axis = 1), axis = 0)
+	res *= 100
+
+	return res.reset_index()
+
+def hour_percentage_dir(folder: list[DataFrame], title_list: list[str]) -> DataFrame:
+	
+	dfs = []
+	
+	for i in range(len(folder)):
+		dfs.append(hour_percentage(folder[i], title = [title_list[i]]))
+		
+	df = concat(dfs)
+	
+	return df
+
+def weekday_hour_percentage(df: DataFrame) -> DataFrame:
+	
+	df = weekday_hour_df(df)
+	
+	res = df.div(df.sum(axis = 1), axis = 0)
+	res *= 100
+	
+	return res#res.reset_index()
 
 if __name__ == "__main__":
 	
-	df = make_table("group_chat.json")
+	df = make_table("input_json/poliba.json")
 	
 	#print(weekday_count(df))
 	
 	#print(day_hour_count(df, 2))
-	print(weekday_hour_df(df))
+	#print(weekday_hour_df(df))
+	
+	#print(day_hour_dir([df, make_table("input_json/polito.json")], title_list=["poliba", "polito"]))
+	
+	#print(hour(df))
+	
+	#print(hour_percentage(df, title=["poliba"]))
+	
+	#print(hour_percentage_dir([df, make_table("input_json/polito.json")], title_list=["poliba", "polito"]))
+	
+	#print(weekday_hour_df(df))
+	
+	print(weekday_hour_percentage(df))
