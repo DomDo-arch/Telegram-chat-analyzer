@@ -78,6 +78,26 @@ def users_z_score(df: DataFrame, destination:str = None) -> DataFrame:
 		df.to_csv(destination, index=False)
 		
 	return df
+
+def total_messages_dir(folder, destination: str = None, title_list: list = None) -> DataFrame:
+	
+	cols = []
+	
+	if isinstance(folder[0], DataFrame):
+		for i in range(len(folder)):
+			cols.append([title_list[i], len(folder[i])])
+	else:
+		for i in range(len(folder)):
+			if title_list is not None:
+				cols.append([title_list[i], len(make_table(folder[i]))])
+			else:
+				filename = folder[i].split("/")[len(folder[i].split())].replace(".json","")
+				cols.append([filename, len(make_table(folder[i]))])	
+				
+	df = DataFrame(cols)
+	df.rename(columns = {0:"chat",1:"messages_count"}, inplace=True)
+
+	return df
 	
 if __name__ == "__main__":
 	
@@ -88,4 +108,7 @@ if __name__ == "__main__":
 	#print(309/sum(words_df.word_count))
 	
 	#print(user_messages)
-	print(users_z_score(df))
+	#print(users_z_score(df))
+	
+	#print(total_messages_dir(["input_json/group_chat.json"]))
+	print(total_messages_dir([make_table("input_json/group_chat.json"), make_table("input_json/polito.json")], title_list=["test1","test2"]))
