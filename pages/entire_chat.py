@@ -152,6 +152,17 @@ def Message_entire(input_json: list) -> None:
 			
 			st.header("Chat messages")
 			st.write(df)	
+
+			chat_gini = []
+			
+			for i in range(len(dfs)):
+				chat_gini.append([titles[i], gini(words_stats(dfs[i]).word_count)])
+			
+			chat_gini = DataFrame(chat_gini)
+			chat_gini.rename(columns = {0:"chat", 1:"gini"}, inplace=True)
+			
+			st.header("Chat messages gini")
+			st.write(chat_gini)
 	
 def Links_entire(input_json) -> None:
 	
