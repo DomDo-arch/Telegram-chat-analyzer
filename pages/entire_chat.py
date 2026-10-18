@@ -95,8 +95,6 @@ def read_input(input_json: str, destination: str = None) -> list[DataFrame]:
 	
 def Message_entire(input_json: list) -> None:
 
-	st.write(1)
-
 	try:
 		df = read_input(input_json[0])
 	except IndexError:
