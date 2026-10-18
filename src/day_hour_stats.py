@@ -120,6 +120,56 @@ def weekday_hour_percentage(df: DataFrame) -> DataFrame:
 	
 	return res#res.reset_index()
 
+def find_min_weekday_hour(df: DataFrame, index: int) -> list[str, str, float]:
+
+	max_value = min([i for i in df.iloc[index, :] if i == i and isinstance(i, float)])
+	titles = [i for i in df.title]
+	
+	max_index = 0
+	for i in range(len(df.columns)):
+		if df.iloc[index, i] == max_value:
+			max_index += i
+			
+	return [titles[index], df.columns[max_index], max_value]
+
+def find_min_weekday_hour_dir(df: DataFrame) -> DataFrame:
+	
+	cols = []
+	titles = [i for i in df.title]
+	
+	for i in range(len(df)):
+		cols.append(find_min_weekday_hour(df, i))
+		
+	df = DataFrame(cols)
+	df.rename(columns = {0: "chat", 1: "hour", 2:"percentage"}, inplace = True)
+	
+	return df
+
+def find_max_weekday_hour(df: DataFrame, index: int) -> list[str, str, float]:
+
+	max_value = max([i for i in df.iloc[index, :] if i==i and isinstance(i, float)])
+	titles = [i for i in df.title]
+	
+	max_index = 0
+	for i in range(len(df.columns)):
+		if df.iloc[index, i] == max_value:
+			max_index += i
+			
+	return [titles[index], df.columns[max_index], max_value]
+
+def find_max_weekday_hour_dir(df: DataFrame) -> DataFrame:
+	
+	cols = []
+	titles = [i for i in df.title]
+	
+	for i in range(len(df)):
+		cols.append(find_max_weekday_hour(df, i))
+		
+	df = DataFrame(cols)
+	df.rename(columns = {0: "chat", 1: "hour", 2:"percentage"}, inplace = True)
+	
+	return df
+
 if __name__ == "__main__":
 	
 	df = make_table("input_json/poliba.json")
@@ -139,4 +189,11 @@ if __name__ == "__main__":
 	
 	#print(weekday_hour_df(df))
 	
-	print(weekday_hour_percentage(df))
+	#print(weekday_hour_percentage(df))
+	
+	df = hour_percentage_dir([df, make_table("input_json/bologna.json")], title_list = ["poliba", "bologna"])
+	
+	print(find_min_weekday_hour(df, 1))
+	
+	#print(find_min_weekday_hour_dir(df))
+	#print(find_max_weekday_hour_dir(df))
