@@ -1,6 +1,6 @@
-from make_table_from_chat import make_table
-from pandas import DataFrame, concat
 from collections import Counter
+from pandas import DataFrame, concat
+from make_table_from_chat import make_table
 
 def weekday_count(df: DataFrame, destination: str = None) -> DataFrame:
 	
@@ -122,20 +122,20 @@ def weekday_hour_percentage(df: DataFrame) -> DataFrame:
 
 def find_min_weekday_hour(df: DataFrame, index: int) -> list[str, str, float]:
 
-	max_value = min([i for i in df.iloc[index, :] if i == i and isinstance(i, float)])
-	titles = [i for i in df.title]
+	min_value = min([i for i in df.iloc[index, :].dropna() if isinstance(i, float)])
+	titles = list(df.title)
 	
-	max_index = 0
+	min_index = 0
 	for i in range(len(df.columns)):
-		if df.iloc[index, i] == max_value:
-			max_index += i
+		if df.iloc[index, i] == min_value:
+			min_index = i
 			
-	return [titles[index], df.columns[max_index], max_value]
+	return [titles[index], df.columns[min_index], min_value]
 
 def find_min_weekday_hour_dir(df: DataFrame) -> DataFrame:
 	
 	cols = []
-	titles = [i for i in df.title]
+	titles = list(df.title)
 	
 	for i in range(len(df)):
 		cols.append(find_min_weekday_hour(df, i))
@@ -147,20 +147,19 @@ def find_min_weekday_hour_dir(df: DataFrame) -> DataFrame:
 
 def find_max_weekday_hour(df: DataFrame, index: int) -> list[str, str, float]:
 
-	max_value = max([i for i in df.iloc[index, :] if i==i and isinstance(i, float)])
-	titles = [i for i in df.title]
+	max_value = max([i for i in df.iloc[index, :].dropna() if isinstance(i, float)])
+	titles = list(df.title)
 	
 	max_index = 0
 	for i in range(len(df.columns)):
 		if df.iloc[index, i] == max_value:
-			max_index += i
+			max_index = i
 			
 	return [titles[index], df.columns[max_index], max_value]
 
 def find_max_weekday_hour_dir(df: DataFrame) -> DataFrame:
 	
 	cols = []
-	titles = [i for i in df.title]
 	
 	for i in range(len(df)):
 		cols.append(find_max_weekday_hour(df, i))
@@ -191,9 +190,9 @@ if __name__ == "__main__":
 	
 	#print(weekday_hour_percentage(df))
 	
-	df = hour_percentage_dir([df, make_table("input_json/bologna.json")], title_list = ["poliba", "bologna"])
+	df = hour_percentage_dir([df, make_table("input_json/pisa.json")], title_list = ["poliba", "pisa"])
 	
-	print(find_min_weekday_hour(df, 1))
+	#print(find_min_weekday_hour(df, 1))
 	
-	#print(find_min_weekday_hour_dir(df))
-	#print(find_max_weekday_hour_dir(df))
+	print(find_min_weekday_hour_dir(df))
+	print(find_max_weekday_hour_dir(df))
