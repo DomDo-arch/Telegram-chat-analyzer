@@ -9,7 +9,7 @@ try:
 	from src.season_stats import season_count, season_dir, season_percentage_folder
 	from src.gini_user_table import gini
 	from src.users_word_table import user_word_table
-	from src.day_hour_stats import weekday_hour_df, day_hour_dir, hour_percentage_dir, weekday_hour_percentage, find_max_weekday_hour, find_max_weekday_hour_dir, find_min_weekday_hour_dir
+	from src.day_hour_stats import weekday_hour_df, day_hour_dir, hour_percentage_dir, weekday_hour_percentage, find_max_weekday_hour_dir, find_min_weekday_hour_dir
 	from src.first_messages import days_sending_messages
 
 except ModuleNotFoundError:
@@ -308,11 +308,12 @@ def Days_entire(input_json):
 			df1 = find_max_weekday_hour_dir(df)
 			st.write(df1)
 			
-			#st.header("Day hour percentage min")
-			#df2 = find_min_weekday_hour_dir(df)
-			#st.write(df2)
+			st.header("Day hour percentage min")
+			df2 = find_min_weekday_hour_dir(df)
+			st.write(df2)
 			
 			df = df.drop(columns=["title"])
+			df = df.sort_index(axis=1)
 			
 			st.header("Day hour percentage heatmap")
 			with st.spinner("Loading..."):
@@ -359,9 +360,9 @@ def Weekdays_entire(input_json):
 			df1 = find_max_week_dir(df)
 			st.write(df1)
 			
-			#st.header("Weekday percentage min")
-			#df2 = find_min_week_dir(df)
-			#st.write(df2)
+			st.header("Weekday percentage min")
+			df2 = find_min_week_dir(df)
+			st.write(df2)
 			
 			df = df.drop(columns=["title"])
 	
