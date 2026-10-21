@@ -1,162 +1,215 @@
 try:
 	from src.make_table_from_chat import make_table
-	from src.words_stats import words_stats, count_user_messages, users_z_score, total_messages_dir
-	from src.weekday_stats import weekday_count, weekday_folder, weekday_percentage_folder, find_max_week_dir, find_min_week_dir
-	from src.make_links_table import make_links_table, links_count, domains_count, links_month_dir, domains_count_dir, group_chats_domains_dir
-	from src.hour_stats import hour_count, hour_dir
-	from src.month_stats import month_count, month_dir, month_percentage_folder, find_max_month_dir, find_min_month_dir
-	from src.year_stats import year_count, year_dir
-	from src.season_stats import season_count, season_dir, season_percentage_folder
-	from src.gini_user_table import gini
+	from src.weekday_stats import weekday, weekday_df, weekday_folder, find_max_week_dir, find_min_week_dir, weekday_percentage_folder
+	from src.words_stats import words_stats, count_messages_df, count_words_df, total_messages_dir, users_z_score
+	from src.day_stats import filter_messages_by_date, filter_messages_date_interval, message_date_list, filter_messages_days_interval, days_without_sending_message
+	from src.links_month import count_links, count_links_month, count_links_df, links_month_dir
+	from src.make_links_table import make_links_table, count_links, make_table_count_links, user_links_df, domains_df, make_domains_count_dir, group_chats_domains_dir
+	from src.month_stats import month_count, month_count_df, month_dir, find_min_month_dir, find_max_month_dir, month_percentage_folder
+	from src.hour_stats import hour_df, day_part_df, hour_dir
+	from src.day_hour_stats import week_day_hour_df, hour_am_pm_df, week_day_hour_am_pm_df, am_pm_format, day_hour_dir, day_hour_percentage_folder, find_min_day_hour_dir, find_max_day_hour_dir
+	from src.user_filter import filter_user_df
+	from src.season_stats import season_df, season_dir, season_percentage_folder
+	from src.first_messages import first_message_each_day_df, first_message_each_day_user
+	from src.year_stats import year_messages_df, year_dir
+	from src.gini_index import gini
+	from src.gini_user_table import gini_user_df
 	from src.users_word_table import user_word_table
-	from src.day_hour_stats import weekday_hour_df, day_hour_dir, hour_percentage_dir, weekday_hour_percentage, find_max_weekday_hour_dir, find_min_weekday_hour_dir
-	from src.first_messages import days_sending_messages
 
 except ModuleNotFoundError:
 	
+	# File testing
 	import sys
 	import os
-
+	
 	sys_path = os.getcwd().split("/")
 	sys_path.append("src")
 	sys_path = "/".join(sys_path)
 	sys.path.append(sys_path)
 	
-	from make_table_from_chat import make_table
-	from words_stats import words_stats, count_user_messages, users_z_score, total_messages_dir
-	from weekday_stats import weekday_count, weekday_folder, weekday_percentage_folder
-	from make_links_table import make_links_table, links_count, domains_count, links_month_dir, domains_count_dir, group_chats_domains_dir
-	from hour_stats import hour_count, hour_dir
-	from month_stats import month_count, month_dir, month_percentage_folder, find_max_month_dir, find_min_month_dir
-	from year_stats import year_count, year_dir
-	from season_stats import season_count, season_dir, season_percentage_folder
-	from gini_user_table import gini
-	from users_word_table import user_word_table
-	from day_hour_stats import weekday_hour_df, day_hour_dir, hour_percentage_dir, weekday_hour_percentage
-	from first_messages import days_sending_messages
+	#st.write(sys_path)
 	
+	from make_table_from_chat import make_table
+	from weekday_stats import weekday, weekday_df, weekday_folder
+	from words_stats import words_stats, count_messages_df, count_words_df, total_messages_dir, users_z_score
+	from day_stats import filter_messages_by_date, filter_messages_date_interval, message_date_list, filter_messages_days_interval, days_without_sending_message
+	from links_month import count_links, count_links_month, count_links_df, links_month_dir
+	from make_links_table import make_links_table, count_links, make_table_count_links, user_links_df, domains_df, make_domains_count_dir, group_chats_domains_dir
+	from month_stats import month_count, month_count_df, month_dir
+	from hour_stats import hour_df, day_part_df, hour_dir
+	from day_hour_stats import week_day_hour_df, hour_am_pm_df, week_day_hour_am_pm_df, am_pm_format, day_hour_dir
+	from user_filter import filter_user_df
+	from season_stats import season_df, season_dir
+	from first_messages import first_message_each_day_df, first_message_each_day_user
+	from year_stats import year_messages_df, year_dir
+	from gini_index import gini
+	from gini_user_table import gini_user_df
+	from users_word_table import user_word_table
+
 import streamlit as st
 
-import os
+import datetime as dt
 
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-from pathlib import Path
+import numpy as np
 
-import json
-
-from datetime import date
+from re import findall
 
 from pandas import DataFrame
+from datetime import date
 
-def read_input(input_json: str, destination: str = None) -> list[DataFrame]:
+def read_input(input_txt: str, ios_checkbox: bool, am_pm_checkbox: bool, date_selectbox: str) -> list:
+		
+	tables = []
+	filenames = []
 
-	def return_table(input_json: str) -> DataFrame:
+	def return_table(file) -> DataFrame:
 
-		data = json.loads(input_json.read())
+		#file = input_txt[1].readlines()
 		
-		chat = []
+		dates = []
+		hours = []
+		message_contents = []
+		users = []
+		weekday_num = []
 		
-		messages_dict = data["messages"]
+		date_pattern = r'\d{2}/\d{2}/\d{2}'
+		hours_pattern = r'\d{2}:\d{2}'
 		
-		for i in messages_dict:
-			if i["type"] == "message":
-				dates = i["date"].split("T")[0]
-				hour = i["date"].split("T")[1]
-				if isinstance(i["text"], str):
-					message = i["text"]
-				elif isinstance(i["text"], list):
-					message = i["text"]
+		for row in file:
+			row = row.decode("utf-8")
+			if len(findall(date_pattern, row)) != 0:
+				if ios_checkbox == True:
+					if am_pm_checkbox == True:
+						hours.append(f"{row.split()[1]} {row.split()[2]}")
+					else:
+						hours.append(f"{row.split()[1].replace(']','')}")
 				
-				date_a = dates.split("-")
-				
-				day = int(date_a[2])
-				month = int(date_a[1])
-				year = int(date_a[0])
-				
-				weekday = date(year, month, day).weekday()
+					users.append((row.split("]")[1].split(":"))[0].strip())
+					message_list = (row.split("]")[1].split(":")[1:])
+					dates.append(' '.join(findall(date_pattern, row)).split()[0])
+					
+					if message_list[0].startswith(" http"):
+						link = ':'.join(message_list).strip()
+						message_contents.append(link)
+					else:
+						message_contents.append((':'.join((row.split("]")[1].split(":")[1:]))))
+            		
+				else:
+					if am_pm_checkbox == True:
+						hours.append(f"{row.split()[1]} {row.split()[2]}")
+						message_contents.append((':'.join(' '.join(row.split()[3:]).split(":")[1:])).strip())
+						users.append(' '.join(row.split()[3:]).split(":")[0])
+						dates.append(' '.join(findall(date_pattern, row)).split()[0])
+					else:
+						if findall(hours_pattern, row):
+							hours.append(f"{row.split()[1]}")
+							
+							message_contents.append((':'.join(' '.join(row.split()[3:]).split(":")[1:])).strip())
+							users.append(' '.join(row.split()[3:]).split(":")[0])
+							dates.append(' '.join(findall(date_pattern, row)).split()[0])
+							
+		date_list = date_selectbox.replace("%", "").split("/")
 		
-			if i["type"] == "message":
-				user = i["from"]
-				chat.append([dates, weekday, hour, user, message])
-
-		df = DataFrame(chat)
-		df.rename(columns = {0:"date", 1:"weekday", 2:"hour", 3:"user", 4:"message", 5:"media_type"}, inplace=True)
+		day_index = date_list.index("d")
+		month_index = date_list.index("m")
+		year_index = date_list.index("y")
 		
-		df["message"] = df["message"].astype(str)
-	
+		for i in range(len(dates)):
+			date_a = dates[i].split("/")
+			
+			day = int(date_a[day_index])
+			month = int(date_a[month_index])
+			year = 2000+int(date_a[year_index])
+			
+			weekday_num.append(date(year, month, day).weekday())
+			
+		#st.write(len(dates), len(hours), len(message_contents), len(users), len(weekday_num))
+		
+		df = DataFrame(data = 
+		{"date":dates,
+		"hours":hours,
+		"weekday":weekday_num,
+		"user_event":users,
+		"message":message_contents}
+		)
+		
 		return df
 	
-	if input_json is not None:
-		return return_table(input_json)
-	else:
-		return None
+	if input_txt is not None:
+		
+		for i in range(len(input_txt)):
+		
+			file_list = input_txt[i].readlines()
+
+			tables.append(return_table(file_list))
+			filename = (input_txt[i].name).replace(".txt","")
+			
+			filenames.append(filename)
+
+			
+	return tables, filenames
+
+def Message_page(input_txt, ios_checkbox, am_pm_checkbox, date_selectbox):
 	
-def Message_entire(input_json: list) -> None:
-
-	try:
-		df = read_input(input_json[0])
-	except IndexError:
-		df = None
-
+	df = read_input(input_txt, ios_checkbox, am_pm_checkbox, date_selectbox)[0]
+	filenames = read_input(input_txt, ios_checkbox, am_pm_checkbox, date_selectbox)[1]
+	
 	if df is not None:
-		if len(input_json) == 1:
-			# Constants
-			positive_z_scores = len([i for i in users_z_score(df).z_score if i>0])
-			users = len(users_z_score(df).z_score)
-	
+		if len(df) == 1:
+			df = df[0]
 			st.header("Chat table")
 			st.write(df)
-	
-			try:
-				st.header("Words stats")
-				df_words_stats = words_stats(df)
-				df_words_stats = df_words_stats.reset_index(drop=True)
-				st.write(gini(df_words_stats.word_count))
-				st.write(df_words_stats)
-			except KeyError:
-				pass
-	
-			st.header("User messages")
 			
-			df_count_user_messages = count_user_messages(df)
-			df_count_user_messages = df_count_user_messages.reset_index(drop=True)
-			st.write(gini(df_count_user_messages.messages))
-			st.write(df_count_user_messages)
-			
-			df_users_z_score = users_z_score(df)
-			df_users_z_score = df_users_z_score.reset_index(drop=True)
-
-			st.header("Messages z-score")
-			st.write(positive_z_scores, positive_z_scores/users)
-			st.write(df_users_z_score)
+			# Word stats
+			st.header("Words stats")
+			st.write(gini(list(count_words_df(df).word_count)))
+			st.write(count_words_df(df))
 		
-			try:
-				st.header("Users word table")
-				word = st.selectbox("Word", list(set(words_stats(df).word)))
-				if word is not None:
-					st.write(user_word_table(df, word))
-			except KeyError:
-				pass
-		else:
-			dfs = [read_input(input_json[i]) for i in range(1, len(input_json))]
-			dfs.append(df)
+			# User messages
+			st.header("User messages count")
+			st.write(gini(list(count_messages_df(df).messages_count)))
+			st.write(count_messages_df(df))
+				
+			st.header("Users word table")
+			word = st.selectbox("Word", list(set(count_words_df(df).word)))
+			st.write(user_word_table(df, word))
+				
+			st.header("Z-score")
+			values = gini([abs(i) for i in users_z_score(df).z_score])
+			st.write(values)
+			st.write(users_z_score(df))
+		
+			st.header("Gini for each user table")
+			with st.spinner("Loading..."):
+				st.write(gini(list(gini_user_df(df).user_gini)))
+				st.write(gini_user_df(df))
 			
-			titles = [i.name.replace(".json","") for i in input_json]
-			titles = [titles[(i+1)%len(titles)] for i in range(len(titles))]
+			st.header("User messages bar chart")
+			st.bar_chart(count_messages_df(df), x="user", y="messages_count")
 			
-			df = total_messages_dir(dfs, title_list=titles)
-			df = df.sort_values("chat")
-			df = df.reset_index(drop=True)
-			
+			# First message
+			first_message_df = first_message_each_day_df(df)
+			if len(first_message_df) != 0:
+				st.header("First message each day stats")
+				st.write(gini(list(first_message_df.messages_count)))
+				st.write(first_message_df)
+				
+				st.header("First message each day bar chart")
+				st.bar_chart(first_message_df, x="user", y="messages_count")
+
+		elif len(df) != 0 and len(df)>1:
 			st.header("Chat messages")
-			st.write(df)
+			st.write(total_messages_dir(df, title_list=filenames))
 			
 			chat_gini = []
 			
-			for i in range(len(dfs)):
-				chat_gini.append([titles[i], gini(words_stats(dfs[i]).word_count)])
+			titles = filenames
+			
+			for i in range(len(df)):
+				chat_gini.append([titles[i], gini(count_words_df(df[i]).word_count)])
 			
 			chat_gini = DataFrame(chat_gini)
 			chat_gini.rename(columns = {0:"chat", 1:"gini"}, inplace=True)
@@ -164,335 +217,340 @@ def Message_entire(input_json: list) -> None:
 			
 			st.header("Chat messages gini")
 			st.write(chat_gini)	
+			
+def Links_page(input_txt, ios_checkbox, am_pm_checkbox, date_selectbox):
 	
-def Links_entire(input_json) -> None:
-	
-	try:
-		df = read_input(input_json[0])
-	except IndexError:
-		df = None
+	df = read_input(input_txt, ios_checkbox, am_pm_checkbox, date_selectbox)[0]
+	filenames = read_input(input_txt, ios_checkbox, am_pm_checkbox, date_selectbox)[1]
 	
 	if df is not None:
-		if len(input_json) == 1:
+		if len(df)== 1:
+			df = df[0]
 			st.header("Links table")
 			st.write(make_links_table(df))
+		
+			st.header("Links for each month")
+			#st.write("std:", np.std(list(count_links_df(df).month_count)))
+			links = count_links_df(df, date_selectbox)
 			
-			st.header("Links count")
-			df1 = links_count(df)
-			df1 = df1.reset_index(drop=True)
-			st.write(df1)
-			
-			#try:
+			st.write(links)
+		
+			st.header("Links for each user table")
+			links_user = user_links_df(df)
+			st.write(links_user)
+		
 			st.header("Domains table")
-			df = domains_count(df)
-			df = df.reset_index(drop=True)
-			st.write(df)
+			st.write(gini(list(domains_df(df).domain_count)))
+			st.write(domains_df(df))
 
-		else:
+			if len(links) != 0:
+				st.header("Links month count bar chart")
+				st.write(gini(list(links.month_count)))
+				st.bar_chart(links, x="month", y="month_count",sort=False)
+		
+			st.header("Links for each user bar chart")
+			st.bar_chart(links_user, x="user", y="link", sort=False)
 			
-			dfs = [read_input(input_json[i]) for i in range(1, len(input_json))]
-			dfs.append(df)
+		elif len(df) > 1:
+			st.header("Links for each month")
+			st.write(links_month_dir(df, date_selectbox, title_list = filenames))
 			
-			titles = [i.name.replace(".json","") for i in input_json]
-			titles = [titles[(i+1)%len(titles)] for i in range(len(titles))]
+			st.header("Domains count")
+			st.write(make_domains_count_dir(df, title_list = filenames))
 			
-			#from streamlit_dynamic_filters import DynamicFilters
+			st.header("Group chats by domain")
+			st.write(group_chats_domains_dir(df, title_list = filenames))
 
-			try:
-				st.header("Links for each month")
-				df = links_month_dir(dfs, title_list = titles)
-				df = df.sort_values("title")
-				df = df.reset_index(drop=True)
-				st.write(df)
-				
-				st.header("Domains count")
-				df = domains_count_dir(dfs, titles)
-				df = df.sort_values("title")
-				df = df.reset_index(drop=True)
-				with st.spinner("Loading..."):
-					st.write(df)
-				
-				st.header("Group chats by domain")
-				
-				#dynamic_filters = DynamicFilters(df = group_chats_domains_dir(dfs, titles), filters = ["domain"])
-				
-				#dynamic_filters.display_filters()
-				
-				df = group_chats_domains_dir(dfs, titles)
-				df = df.sort_values("chat")
-				df = df.reset_index(drop=True)
-
-				with st.spinner("Loading..."):
-					st.write(df)
-
-			except AttributeError as e:
-				st.write("To fix. Detected at least a json containing 0 links.")
+def Hours_page(input_txt, ios_checkbox, am_pm_checkbox, date_selectbox):
 	
-def Hours_entire(input_json):
-	
-	try:
-		df = read_input(input_json[0])
-	except IndexError:
-		df = None
+	df = read_input(input_txt, ios_checkbox, am_pm_checkbox, date_selectbox)[0]
+	filenames = read_input(input_txt, ios_checkbox, am_pm_checkbox, date_selectbox)[1]
 	
 	if df is not None:
-		if len(input_json) == 1:
-			st.header("Hour stats")
-			st.write(gini(hour_count(df).messages))
-			st.bar_chart(hour_count(df), x="hour", y="messages")
-		else:
-			dfs = [read_input(input_json[i]) for i in range(1, len(input_json))]
-			dfs.append(df)
-			
-			titles = [i.name.replace(".json","") for i in input_json]
-			titles = [titles[(i+1)%len(titles)] for i in range(len(titles))]
-			
+		if len(df)==1:
+			df = df[0]
+			if am_pm_format(df) == True:
+				st.header("AM hour stats")
+				st.bar_chart(hour_am_pm_df(df)[0], x="hour", y="hour_count")
+				st.header("PM hour stats")
+				st.bar_chart(hour_am_pm_df(df)[1], x="hour", y="hour_count")
+			else:
+				st.header("Hour stats")
+				st.write(gini(list(hour_df(df).hour_count)))
+				st.bar_chart(hour_df(df), x="hour", y="hour_count", sort=False)	
+		elif len(df) > 1:
 			st.header("Day part stats")
-			df = hour_dir(dfs, title_list=titles)
-			df = df.sort_values("title")
-			df = df.reset_index(drop=True)
-			st.write(df)
-			
-def Days_entire(input_json):
+			st.write(hour_dir(df, title_list=filenames))
+			pass
+
+def Day_page(input_txt, ios_checkbox, am_pm_checkbox, date_selectbox):
 	
-	try:
-		df = read_input(input_json[0])
-	except IndexError:
-		df = None
+	df = read_input(input_txt, ios_checkbox, am_pm_checkbox, date_selectbox)[0]
+	filename = read_input(input_txt, ios_checkbox, am_pm_checkbox, date_selectbox)[1]
 
 	title_label = "mon tue wed thu fri sat sun".split()
 	
 	if df is not None:
-		if len(input_json) == 1:
-		
-			st.header("Day stats")
-			st.write("Chat length:", days_sending_messages(df)[0])
-			st.write("Days sending at least a message:", days_sending_messages(df)[1])
-			st.write(days_sending_messages(df)[0]/days_sending_messages(df)[1])
-		
-			st.header("Day hour stats")
-			with st.spinner("Loading..."):
-				st.write(weekday_hour_df(df))
+		if len(df) == 1:
+			df = df[0]
+			try:
+				st.header("Day stats")
+				st.write("a) Chat days:", days_without_sending_message(df, date_selectbox)[0])
+				st.write("b) Days sending at least a message:", days_without_sending_message(df, date_selectbox)[1])
+				st.write("c) Percent b/a:", days_without_sending_message(df, date_selectbox)[2])
 			
-			st.header("Weekday percentage")
-			df1 = weekday_hour_percentage(df)
-			with st.spinner("Loading..."):
-				st.write(df1)
-			
-			st.header("Day hour percentage heatmap")
-			with st.spinner("Loading..."):
-				plt.figure(figsize=(len(df1.columns)-1,6))
-				sns.heatmap(df1, annot = True, yticklabels=title_label, cmap="coolwarm")
-				st.pyplot(plt)
-				
-		else:
-			dfs = [read_input(input_json[i]) for i in range(1, len(input_json))]
-			dfs.append(df)
-			
-			titles = [i.name.replace(".json","") for i in input_json]
-			titles = [titles[(i+1)%len(titles)] for i in range(len(titles))]
-			
-			st.header("Day hour stats")
-			df = day_hour_dir(dfs, title_list=titles)
-			df = df.sort_values("title")
-			df = df.reset_index(drop=True)
-			st.write(df)
-			
-			st.header("Day hour percentage")
-			df = hour_percentage_dir(dfs, title_list=titles)
-			df = df.sort_values("title")
-			df = df.reset_index(drop=True)
-			st.write(df)
-			
-			st.header("Day hour percentage max")
-			df1 = find_max_weekday_hour_dir(df)
-			st.write(df1)
-			
-			st.header("Day hour percentage min")
-			df2 = find_min_weekday_hour_dir(df)
-			st.write(df2)
-			
-			df = df.drop(columns=["title"])
-			df = df.sort_index(axis=1)
-			
-			st.header("Day hour percentage heatmap")
-			with st.spinner("Loading..."):
-				plt.figure(figsize=(len(df.columns)-1,len(df)))
-				sns.heatmap(df, annot=True, yticklabels=titles[::-1], cmap="coolwarm")
-				st.pyplot(plt)
-	
-def Weekdays_entire(input_json):
-	
-	try:
-		df = read_input(input_json[0])
-	except IndexError:
-		df = None
-	
-	if df is not None:
-		if len(input_json) == 1:
-			st.header("Weekday stats")
-			st.write(gini(weekday_count(df).messages))
-			st.bar_chart(weekday_count(df), x="weekday", y="messages", sort=False)
+				st.header("Day part")
+				st.write(gini(list(day_part_df(df).messages_count)))
+				st.bar_chart(day_part_df(df), x="day_part", y="messages_count", sort=False)
+			except ZeroDivisionError:
+				pass
+			#st.write(am_pm_format(df))
 
-		else:
-			dfs = [read_input(input_json[i]) for i in range(1, len(input_json))]
-			dfs.append(df)
+			if am_pm_format(df) == True:
+				df = df[0]
+				st.header("AM day hour stats")
+				st.write(week_day_hour_am_pm_df(df)[0])
+		
+				st.header("PM day hour stats")
+				st.write(week_day_hour_am_pm_df(df)[1])
 			
-			titles = [i.name.replace(".json","") for i in input_json]
-			titles = [titles[(i+1)%len(titles)] for i in range(len(titles))]
+				st.header("AM day hour heatmap")
+				plt.figure(figsize=(12,6))
+					
+				title_label = "mon tue wed thu fri sat sun".split()
+					
+				sns.heatmap(week_day_hour_am_pm_df(df)[0], annot=True, yticklabels=title_label, cmap="coolwarm")
+				st.pyplot(plt)
 			
+				st.header("PM day hour heatmap")
+				plt.figure(figsize=(12,6))
+				sns.heatmap(week_day_hour_am_pm_df(df)[1], annot=True, yticklabels=title_label, cmap="coolwarm")
+				st.pyplot(plt)
+		
+			else:
+				st.header("Day hour stats")
+		
+				with st.spinner("Loading..."):
+					st.write(week_day_hour_df(df))
+			
+				st.header("Day hour heatmap")
+					
+				title_label = "mon tue wed thu fri sat sun".split()
+
+				with st.spinner("Loading..."):
+					plt.figure(figsize=(23,6))
+					sns.heatmap(week_day_hour_df(df), annot=True, cmap="coolwarm", yticklabels=title_label)
+					st.pyplot(plt)
+
+		elif len(df) > 1:
+				
+			dfs = []
+			am_dfs, pm_dfs = [], []
+				
+			for i in range(len(df)):
+				dfs.append(df[i])
+				
+			if am_pm_format(dfs[0]):
+				for i in range(len(dfs)):
+					am_dfs.append(week_day_hour_am_pm_df(dfs[i])[0])
+					pm_dfs.append(week_day_hour_am_pm_df(dfs[i])[1])
+						
+				st.header("AM Day hour stats")
+				am_dfs = sum(am_dfs)
+				st.write(am_dfs)
+
+				st.header("PM Day hour stats")	
+				pm_dfs = sum(pm_dfs)
+				st.write(pm_dfs)
+					
+				st.header("AM Day heatmap")
+				with st.spinner("Loading..."):
+					plt.figure(figsize=(len(am_dfs.columns), len(am_dfs)))
+					sns.heatmap(am_dfs, annot=True, yticklabels=title_label, cmap="coolwarm")
+					st.pyplot(plt)
+					
+				st.header("PM Day heatmap")
+				with st.spinner("Loading..."):
+					plt.figure(figsize=(len(pm_dfs.columns), len(pm_dfs)))
+					sns.heatmap(pm_dfs, annot=True, yticklabels=title_label, cmap="coolwarm")
+					st.pyplot(plt)
+			else:
+				st.header("Day hour stats")
+				st.write(day_hour_dir(df, title_list = filename))
+				
+				st.header("Day hour percentage")
+				dfs = day_hour_percentage_folder(df, title_list = filename)
+				st.write(dfs)
+				
+				st.header("Day hour min percentage")
+				st.write(find_min_day_hour_dir(dfs))
+				
+				st.header("Day hour max percentage")
+				st.write(find_max_day_hour_dir(dfs))
+				
+				st.header("Day hour heatmap")
+				df = day_hour_dir(df, title_list = filename)
+				title_label = list(df.title)
+				
+				dfs = dfs.drop(columns=["title"])
+				with st.spinner("Loading..."):
+					plt.figure(figsize=(len(dfs.columns),len(dfs)))
+					sns.heatmap(dfs, annot=True, yticklabels=title_label, cmap="coolwarm")
+					st.pyplot(plt)
+
+def Weekday_page(input_txt, ios_checkbox, am_pm_checkbox, date_selectbox):
+	
+	df = read_input(input_txt, ios_checkbox, am_pm_checkbox, date_selectbox)[0]
+	filenames = read_input(input_txt, ios_checkbox, am_pm_checkbox, date_selectbox)[1]
+	
+	if df is not None:	
+		if len(df) == 1:
+			df = df[0]
 			st.header("Weekday stats")
-			df = weekday_folder(dfs, title_list=titles)
-			df = df.sort_values("title")
-			df = df.reset_index(drop=True)
-			st.write(df)
+			st.bar_chart(weekday_df(df), x="weekday", y="messages_count", sort=False)
+
+		elif len(df) > 1:
+			st.header("Weekday stats")
+			st.write(weekday_folder(df, title_list = filenames))
 			
-			st.header("Weekday percentage")
-			df = weekday_percentage_folder(dfs, title_list=titles)
-			df = df.sort_values("title")
-			df = df.reset_index(drop=True)
-			st.write(df)
+			st.header("Weekday percentage stats")
+			dfs = weekday_percentage_folder(df, title_list = filenames)
+			st.write(dfs)
 			
-			df = weekday_percentage_folder(dfs, titles)
-			df = df.sort_values("title")
+			st.header("Weekday min percentage stats")
+			st.write(find_min_week_dir(dfs))	
 			
-			st.header("Weekday percentage max")
-			df1 = find_max_week_dir(df)
-			st.write(df1)
-			
-			st.header("Weekday percentage min")
-			df2 = find_min_week_dir(df)
-			st.write(df2)
-			
-			df = df.drop(columns=["title"])
-	
-			st.header("Weekday percentage heatmap")
+			st.header("Weekday max percentage stats")
+			st.write(find_max_week_dir(dfs))
+				
+			st.header("Weekday heatmap")
+			title_label = list(dfs.title)
+				
+			dfs = dfs.drop(columns=["title"])
+
 			with st.spinner("Loading..."):
-				plt.figure(figsize=(len(df.columns), len(df)))
-				sns.heatmap(df, annot=True, yticklabels=titles[::-1], cmap="coolwarm")
+				plt.figure(figsize=(len(dfs.columns), len(dfs)))
+				sns.heatmap(dfs, annot=True, yticklabels=title_label, cmap="coolwarm")
 				st.pyplot(plt)
+			
+def Months_page(input_txt, ios_checkbox, am_pm_checkbox, date_selectbox):
 	
-def Months_entire(input_json):
-	
-	try:
-		df = read_input(input_json[0])
-	except IndexError:
-		df = None
-	
+	df = read_input(input_txt, ios_checkbox, am_pm_checkbox, date_selectbox)[0]
+	filenames = read_input(input_txt, ios_checkbox, am_pm_checkbox, date_selectbox)[1]
+
 	if df is not None:
-		if len(input_json) == 1:
-			st.header("Month stats")
-			st.write(gini(month_count(df).messages))
-			st.bar_chart(month_count(df), x="month", y="messages", sort=False)
-		else:
-			dfs = [read_input(input_json[i]) for i in range(1, len(input_json))]
-			dfs.append(df)
-			
-			titles = [i.name.replace(".json","") for i in input_json]
-			titles = [titles[(i+1)%len(titles)] for i in range(len(titles))]
-			
+		if len(df) == 1:
+			df = df[0]
+			month_messages = month_count_df(df, date_selectbox)
+			st.header("Month messages count bar chart")
+			st.bar_chart(month_messages, x="month", y="messages_count", sort=False)
+		elif len(df) > 1:
 			st.header("Month messages")
-			df = month_dir(dfs, title_list=titles)
-			df = df.sort_values("title")
-			df = df.reset_index(drop=True)
-			st.write(df)
+			st.write(month_dir(df, title_list=filenames))
 			
-			st.header("Month messages percentage")
-			df = month_percentage_folder(dfs, title_list=titles)
-			df = df.sort_values("title")
-			df = df.reset_index(drop=True)
-			st.write(df)
+			st.header("Month percentage stats")
+			dfs = month_percentage_folder(df, title_list=filenames)
+			st.write(dfs)
 			
-			st.header("Month messages percentage max")
-			df1 = find_max_month_dir(df)
-			st.write(df1)
+			st.header("Month min percentage stats")
+			st.write(find_min_month_dir(dfs))
 			
-			st.header("Month messages percentage min")
-			df2 = find_min_month_dir(df)
-			st.write(df2)
-			
-			df = df.drop(columns=["title"])
-			
-			st.header("Month messages percentage heatmap")
+			st.header("Month max percentage stats")
+			st.write(find_max_month_dir(dfs))
+				
+			st.header("Month heatmap")
+				
+			title_label = list(dfs.title)
+				
+			dfs = dfs.drop(columns = ["title"])
+				
 			with st.spinner("Loading..."):
-				plt.figure(figsize=(len(df.columns), len(df)))
-				sns.heatmap(df, annot=True, yticklabels=titles[::-1], cmap="coolwarm")
+				plt.figure(figsize = (len(dfs.columns), len(dfs)))
+				sns.heatmap(dfs, annot=True, yticklabels=title_label, cmap="coolwarm")
 				st.pyplot(plt)
+			
+def Year_page(input_txt, ios_checkbox, am_pm_checkbox, date_selectbox):
 	
-def Years_entire(input_json):
-	
-	try:
-		df = read_input(input_json[0])
-	except IndexError:
-		df = None
-	
+	df = read_input(input_txt, ios_checkbox, am_pm_checkbox, date_selectbox)[0]
+	filenames = read_input(input_txt, ios_checkbox, am_pm_checkbox, date_selectbox)[1]
+
 	if df is not None:
-		if len(input_json) == 1:
+		if len(df) == 1:
+			df = df[0]
+			# Year stats
 			st.header("Year stats")
-			st.bar_chart(year_count(df), x="year", y="messages")
-	
-			st.header("Season stats")
-			st.bar_chart(season_count(df), x="season", y="messages")
-		else:
-			dfs = [read_input(input_json[i]) for i in range(1, len(input_json))]
-			dfs.append(df)
+			st.bar_chart(year_messages_df(df), x="year", y="messages_count")
 			
-			titles = [i.name.replace(".json","") for i in input_json]
-			titles = [titles[(i+1)%len(titles)] for i in range(len(titles))]
+			# Season stats
+			st.header("Season stats")
+			st.write(gini(list(season_df(df).messages_count)))
+			st.bar_chart(season_df(df), x="season", y="messages_count", sort=False)
+
+		elif len(df)>1:
 			
 			st.header("Year stats")
-			st.bar_chart(year_dir(dfs), x="year", y="messages_count")
+			
+			dfs = []
+			
+			for i in range(len(df)):
+				dfs.append(year_messages_df(df[i]))
+			
+			st.bar_chart(year_dir([dfs[i] for i in range(len(dfs))]), x="year", y="messages_count", sort=False)
 			
 			st.header("Season stats")
-			df = season_dir(dfs, title_list=titles)
-			df = df.sort_values("title")
-			df = df.reset_index(drop=True)
-			st.write(df)
+			st.write(season_dir(df, title_list=filenames))
 			
-			st.header("Season percentage")
-			df = season_percentage_folder(dfs, title_list=titles)
-			df = df.sort_values("title")
-			df = df.reset_index(drop=True)
+			st.header("Season percentage stats")
+			dfs = season_percentage_folder(df, title_list=filenames)
+			st.write(dfs)
 			
-			st.write(df)
+			st.header("Season heatmap")
 			
-			df = df.drop(columns = ["title"])
+			df = season_dir(df, title_list=filenames)
 			
-			st.header("Season percentage heatmap")
+			title_label = list(df.title)
+			dfs = dfs.drop(columns=["title"])
+			
 			with st.spinner("Loading..."):
-				plt.figure(figsize=(len(df.columns), len(df)))
-				sns.heatmap(df, annot=True, yticklabels=titles[::-1], cmap="coolwarm")
+				plt.figure(figsize = (len(dfs.columns), len(dfs)))
+				sns.heatmap(dfs, annot=True, yticklabels=title_label, cmap="coolwarm")
 				st.pyplot(plt)
-	
+
 if __name__ == "__main__":
 	
-	#input_json = "group_chat.json"
-	input_json = st.file_uploader(label="Files", type="json", accept_multiple_files = True)
+	# Import chat
+	input_txt = st.file_uploader(label="upload", accept_multiple_files=True, type=["txt"])
 	
-	#st.write(input_json)
+	# Sidebar options
+	#st.sidebar.subheader("Formats")
+	ios_checkbox = st.sidebar.checkbox("ios", key="ios_cookie")
+	am_pm_checkbox = st.sidebar.checkbox("am_pm", key="am_pm_cookie")
+	date_selectbox = st.sidebar.selectbox("Date", ["%d/%m/%y", "%m/%d/%y", "%y/%m/%d"], key="date_cookie")
 	
-	#if input_json is not None: st.write(input_json)
-	
+	#st.write(ios_checkbox, am_pm_checkbox, date_selectbox)
+		
+	#df = read_input2(input_txt, ios_checkbox, am_pm_checkbox, date_selectbox)
+
 	def Messages():
-		Message_entire(input_json)
-		
-	def Links():
-		Links_entire(input_json)
-		
-	def Hours():
-		Hours_entire(input_json)
-		
-	def Days():
-		Days_entire(input_json)
-		
-	def Weekdays():
-		Weekdays_entire(input_json)
-		
-	def Months():
-		Months_entire(input_json)
-		
-	def Years():
-		Years_entire(input_json)
+		Message_page(input_txt, ios_checkbox, am_pm_checkbox, date_selectbox)
 	
+	def Links():
+		Links_page(input_txt, ios_checkbox, am_pm_checkbox, date_selectbox)
+	
+	def Hours():
+		Hours_page(input_txt, ios_checkbox, am_pm_checkbox, date_selectbox)
+	
+	def Days():
+		Day_page(input_txt, ios_checkbox, am_pm_checkbox, date_selectbox)
+	
+	def Weekdays():
+		Weekday_page(input_txt, ios_checkbox, am_pm_checkbox, date_selectbox)
+	
+	def Months():
+		Months_page(input_txt, ios_checkbox, am_pm_checkbox, date_selectbox)
+	
+	def Years():
+		Year_page(input_txt, ios_checkbox, am_pm_checkbox, date_selectbox)
+		
 	pg = st.navigation([Messages, Links, Hours, Days, Weekdays, Months, Years])
 	pg.run()
