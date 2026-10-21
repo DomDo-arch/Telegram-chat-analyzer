@@ -1,6 +1,6 @@
 try:
 	from src.make_table_from_chat import make_table
-	from src.weekday_stats import weekday, weekday_df, weekday_folder, find_max_week_dir, find_min_week_dir, weekday_percentage_folder
+	from src.weekday_stats import weekday, weekday_folder, find_max_week_dir, find_min_week_dir, weekday_percentage_folder
 	from src.words_stats import words_stats, count_messages_df, count_words_df, total_messages_dir, users_z_score
 	from src.day_stats import filter_messages_by_date, filter_messages_date_interval, message_date_list, filter_messages_days_interval, days_without_sending_message
 	from src.links_month import count_links, count_links_month, count_links_df, links_month_dir
