@@ -90,20 +90,19 @@ def weekday_percentage_folder(folder: list[DataFrame], title_list:list[str]) -> 
 
 def find_max_week(df: DataFrame, index: int) -> list[str, str, float]:
 
-	max_value = max([i for i in df.iloc[index, :] if i==i and isinstance(i, float)])
-	titles = [i for i in df.title]
+	max_value = max([i for i in df.iloc[index, :].dropna() if isinstance(i, float)])
+	titles = list(df.title)
 	
 	max_index = 0
 	for i in range(len(df.columns)):
 		if df.iloc[index, i] == max_value:
-			max_index += i
+			max_index = i
 			
 	return [titles[index], df.columns[max_index], max_value]
 
 def find_max_week_dir(df: DataFrame) -> DataFrame:
 	
 	cols = []
-	titles = [i for i in df.title]
 	
 	for i in range(len(df)):
 		cols.append(find_max_week(df, i))
@@ -115,13 +114,13 @@ def find_max_week_dir(df: DataFrame) -> DataFrame:
 
 def find_min_week(df: DataFrame, index: int) -> list[str, str, float]:
 
-	max_value = min([i for i in df.iloc[index, :] if i==i and isinstance(i, float)])
-	titles = [i for i in df.title]
+	max_value = min([i for i in df.iloc[index, :].dropna() if isinstance(i, float)])
+	titles = list(df.title)
 	
 	max_index = 0
 	for i in range(len(df.columns)):
 		if df.iloc[index, i] == max_value:
-			max_index += i
+			max_index = i
 			
 	return [titles[index], df.columns[max_index], max_value]
 
