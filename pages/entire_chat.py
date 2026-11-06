@@ -363,7 +363,7 @@ def Weekdays_entire(input_json):
 			df = df.sort_values("title")
 			
 			st.header("Weekday percentage max")
-			st.write("")
+			st.write(0)
 			df1 = find_max_week_dir(df)
 			st.write(df1)
 			
